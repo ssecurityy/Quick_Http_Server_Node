@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Beera File Server</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+      form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      input[type="file"] {
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      #progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: lightgray;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+      #progress-indicator {
+        width: 0;
+        height: 100%;
+        background-color: green;
+        border-radius: 10px;
+        transition: width 0.3s ease-in-out;
+      }
+      #progress-percentage {
+        color: green;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      #files {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #files h3 {
+        margin-bottom: 10px;
+      }
+      #files ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      #files li {
+        margin-bottom: 10px;
+      }
+      #spinner {
+        display: none;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Beera File Upload Server</h1>
+    <form id="upload-form" action="http://192.168.2.106:3000/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="file">
+      <input type="submit" value="Upload">
+    </form>
+    <div id="progress-bar">
+      <div id="progress-indicator"></div>
+    </div>
+    <p id="progress-percentage">0%</p>
+
+<button id="download-button">Download File</button>
+<script>
+document.getElementById("download-button").addEventListener("click", function() {
+  window.location.href = "http://192.168.2.106:3000/download/`${fileName}`";
+});</script>
+
+
+    <div id="files">
+      <h3>Uploaded Files:</h3>
+      <ul></ul>
+    </div>
+    <img id="spinner" src="spinner.gif" alt="Loading...">
+
+<script>
+
+
+   fetch('http://192.168.2.106:3000/files')
+        .then(res => res.json())
+        .then(files => {
+          let list = document.querySelector('#files ul');
+          files.forEach(file => {
+            let item = document.createElement('li');
+            item.innerHTML = file;
+            list.appendChild(item);
+          });
+        });
+      const form = document.querySelector('#upload-form');
+      const progressBar = document.querySelector('#progress-bar');
+      const progressIndicator = document.querySelector('#progress-indicator');
+      const progressPercentage = document.querySelector('#progress-percentage');
+      const spinner = document.querySelector('#spinner');
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        spinner.style.display = "block";
+        progressBar.style.display = "block";
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action, true);
+        xhr.upload.addEventListener('progress', e => {
+          const percentComplete = (e.loaded / e.total) * 100;
+          progressIndicator.style.width = percentComplete + '%';
+          progressPercentage.innerHTML = percentComplete + '%';
+        });
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            progressBar.style.backgroundColor = '#4caf50';
+            progressPercentage.innerHTML = 'File uploaded successfully';
+          } else {
+            progressBar.style.backgroundColor = '#f44336';
+            progressPercentage.innerHTML = 'File upload failed';
+          }
+          spinner.style.display = "none";
+        });
+        xhr.send(formData);
+      });
+</script>
+</body>
+</html>
